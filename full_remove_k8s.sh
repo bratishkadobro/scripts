@@ -26,6 +26,22 @@ apt-mark unhold kubeadm kubectl kubelet containerd || true
 echo -e "\n🔻 \033[1;33mПолный сброс kubeadm...\033[0m"
 kubeadm reset -f || true
 
+echo -e "\n🔻 \033[1;33mПринудительное завершение всех контейнеров...\033[0m"
+crictl stop $(crictl ps -aq) || true
+crictl rm $(crictl ps -aq) || true
+
+echo -e "\n🔻 \033[1;33mУдаление всех pod'ов из containerd вручную...\033[0m"
+for POD in $(ctr -n k8s.io containers list -q); do
+    ctr -n k8s.io containers delete $POD || true
+done
+
+echo -e "\n🔻 \033[1;33mОчистка процессов, которые могут блокировать файлы...\033[0m"
+ps aux | grep -E 'kube|etcd|containerd' | grep -v grep | awk '{print $2}' | xargs kill -9 || true
+
+echo -e "\n🔄 \033[1;33mПерезапуск containerd перед удалением файлов...\033[0m"
+systemctl restart containerd
+
+
 echo -e "\n🔻 \033[1;33mОчистка системы от Kubernetes...\033[0m"
 rm -rf ~/.kube
 rm -rf /etc/kubernetes /var/lib/etcd /var/lib/kubelet /etc/cni/net.d /var/lib/cni
@@ -40,4 +56,4 @@ echo -e "\n🔻 \033[1;33mУдаление старых пакетов Kubernete
 apt-get remove --purge -y --allow-change-held-packages kubeadm kubectl kubelet containerd
 apt-get autoremove -y
 
-echo -e "\n✅ \033[1;32mУдаление завершено! Готово для чистой установки.\033[0m"
+echo -e "\n✅ \033[1;32mУдаление завершено! Рекомендуется перезагрузка.\033[0m"

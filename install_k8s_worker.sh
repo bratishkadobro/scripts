@@ -2,10 +2,10 @@
 
 set -e  # Остановить скрипт при ошибке
 
-echo -e "\n🚀 \033[1;34mУстановка Kubernetes Master Node...\033[0m"
+echo -e "\n🚀 \033[1;34mУстановка Kubernetes Worker Node...\033[0m"
 
 # Подтверждение от пользователя
-read -p "⚠️  ВНИМАНИЕ: Будет установлен Kubernetes Master Node. Продолжить? (y/N): " CONFIRM
+read -p "⚠️  ВНИМАНИЕ: Будет установлен Worker Node. Продолжить? (y/N): " CONFIRM
 if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
     echo -e "\n❌ Операция отменена."
     exit 1
@@ -41,20 +41,10 @@ echo -e "\n🚫 \033[1;33mОтключение swap...\033[0m"
 swapoff -a
 sed -i '/ swap / s/^/#/' /etc/fstab
 
-echo -e "\n🚀 \033[1;33mИнициализация Kubernetes Master...\033[0m"
-kubeadm init --pod-network-cidr=192.168.0.0/16 | tee /root/kubeadm-init.log
+echo -e "\n🔗 \033[1;34mВведите команду для подключения к кластеру (скопируйте с Master):\033[0m"
+read -p "> " JOIN_COMMAND
 
-echo -e "\n🔗 \033[1;33mНастройка kubectl для пользователя root...\033[0m"
-mkdir -p $HOME/.kube
-cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-chown $(id -u):$(id -g) $HOME/.kube/config
+echo -e "\n🚀 \033[1;33mПодключение Worker Node к кластеру...\033[0m"
+$JOIN_COMMAND
 
-echo -e "\n🌐 \033[1;33mУстановка сетевого плагина Calico...\033[0m"
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml --validate=false
-
-echo -e "\n✅ \033[1;32mMaster Node успешно установлен! Проверяем статус...\033[0m"
-kubectl get nodes
-kubectl get pods -n kube-system
-
-echo -e "\n🔗 \033[1;34mКоманда для подключения Worker-узлов:\033[0m"
-kubeadm token create --print-join-command | tee /root/join-command.txt
+echo -e "\n✅ \033[1;32mWorker Node успешно подключён к кластеру!\033[0m"
