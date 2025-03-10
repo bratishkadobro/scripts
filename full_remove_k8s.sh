@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e  # Остановить скрипт при ошибке
+set -e  # Останавливаем скрипт при ошибке
 
 echo -e "\n🔥 \033[1;31mУдаление Kubernetes и очистка системы...\033[0m"
 
@@ -15,12 +15,13 @@ echo -e "\n🔻 \033[1;33mОстановка Kubernetes и всех его ко�
 systemctl stop kubelet || true
 systemctl stop containerd || true
 
-echo -e "\n🔻 \033[1;33mПринудительное удаление всех контейнеров...\033[0m"
+echo -e "\n🔻 \033[1;33mПринудительное завершение всех контейнеров...\033[0m"
 crictl stop $(crictl ps -aq) || true
 crictl rm $(crictl ps -aq) || true
-
-echo -e "\n🔻 \033[1;33mОчистка оставшихся контейнеров и подов...\033[0m"
 ps aux | grep -E 'kube|etcd|containerd' | grep -v grep | awk '{print $2}' | xargs kill -9 || true
+
+echo -e "\n🔻 \033[1;33mСнятие hold с пакетов Kubernetes...\033[0m"
+apt-mark unhold kubeadm kubectl kubelet containerd || true
 
 echo -e "\n🔻 \033[1;33mПолный сброс kubeadm...\033[0m"
 kubeadm reset -f || true
@@ -36,7 +37,7 @@ iptables -F && iptables -X && iptables -t nat -F && iptables -t nat -X && iptabl
 ipvsadm --clear || true
 
 echo -e "\n🔻 \033[1;33mУдаление старых пакетов Kubernetes и containerd...\033[0m"
-apt-get remove --purge -y kubeadm kubectl kubelet kubernetes-cni containerd
+apt-get remove --purge -y --allow-change-held-packages kubeadm kubectl kubelet containerd
 apt-get autoremove -y
 
 echo -e "\n✅ \033[1;32mУдаление завершено! Готово для чистой установки.\033[0m"
