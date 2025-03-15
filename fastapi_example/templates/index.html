@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <title>Главная</title>
+    <!-- Подключение CSS-стилей из папки static -->
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
+</head>
+<body>
+    <h1>Добро пожаловать в приложение FastAPI!</h1>
+    <p>Это главная страница.</p>
+    <p><a href="{{ url_for('read_about') }}">О приложении</a></p>
+</body>
+</html>
